@@ -23,5 +23,5 @@ test -n "$branch"
   ls
   cp d8cc.patch v8
   cd v8
-  git apply d8cc.patch
+ # git apply d8cc.patch
 )
