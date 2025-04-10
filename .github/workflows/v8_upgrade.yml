@@ -1,4 +1,4 @@
-name: V8 Upgrade
+name: V8Upgrade
 
 on:
   workflow_dispatch:
