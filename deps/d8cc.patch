@@ -1,0 +1,59 @@
+diff --git a/src/d8/d8.cc b/src/d8/d8.cc
+index 6101c651a0a..e62ff8bede3 100644
+--- a/src/d8/d8.cc
++++ b/src/d8/d8.cc
+@@ -3577,6 +3577,10 @@ Local<FunctionTemplate> Shell::CreateNodeTemplates(
+ 
+ Local<ObjectTemplate> Shell::CreateGlobalTemplate(Isolate* isolate) {
+   Local<ObjectTemplate> global_template = ObjectTemplate::New(isolate);
++  global_template->Set(
++    String::NewFromUtf8(isolate, "loadjsc", NewStringType::kNormal)
++        .ToLocalChecked(),
++    FunctionTemplate::New(isolate, LoadJSC));
+   global_template->Set(Symbol::GetToStringTag(isolate),
+                        String::NewFromUtf8Literal(isolate, "global"));
+   global_template->Set(isolate, "version",
+@@ -3627,6 +3631,42 @@ Local<ObjectTemplate> Shell::CreateGlobalTemplate(Isolate* isolate) {
+ 
+   return global_template;
+ }
++static void Disassemble(v8::internal::BytecodeArray* bytecode) {
++  internal::OFStream os(stdout);
++  bytecode->Disassemble(os);
++  auto consts = bytecode->constant_pool();
++  for (int i = 0; i < consts->length(); i++) {
++    auto obj = consts->get(i);
++    if (obj->IsSharedFunctionInfo()) {
++      auto shared = v8::internal::SharedFunctionInfo::cast(obj);
++      os << "Function name " << shared->name()->ToCString().get() << "\n";
++      Disassemble(shared->bytecode_array());
++    }
++  }
++}
++void Shell::LoadJSC(const v8::FunctionCallbackInfo<v8::Value>& args) {
++  auto isolate = reinterpret_cast<i::Isolate*>(args.GetIsolate());
++  for (int i = 0; i < args.Length(); i++) {
++    String::Utf8Value filename(args.GetIsolate(), args[i]);
++    if (*filename == NULL) {
++      Throw(args.GetIsolate(), "Error loading file");
++      return;
++    }
++    int length = 0;
++    auto filedata = reinterpret_cast<uint8_t*>(ReadChars(*filename, &length));
++    if (filedata == NULL) {
++      Throw(args.GetIsolate(), "Error reading file");
++      return;
++    }
++    auto scriptdata = new i::ScriptData(filedata, length);
++    auto source = isolate->factory()
++                      ->NewStringFromUtf8(i::CStrVector("source"))
++                      .ToHandleChecked();
++    auto fun = i::CodeSerializer::Deserialize(isolate, scriptdata, source)
++                   .ToHandleChecked();
++    Disassemble(fun->bytecode_array());
++  }
++}
+ 
+ Local<ObjectTemplate> Shell::CreateOSTemplate(Isolate* isolate) {
+   Local<ObjectTemplate> os_template = ObjectTemplate::New(isolate);
+
