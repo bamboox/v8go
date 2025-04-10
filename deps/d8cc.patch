@@ -1,22 +1,11 @@
 diff --git a/src/d8/d8.cc b/src/d8/d8.cc
-index 6101c651a0a..e62ff8bede3 100644
+index 6101c651a0a..2cc6923a199 100644
 --- a/src/d8/d8.cc
 +++ b/src/d8/d8.cc
-@@ -3577,6 +3577,10 @@ Local<FunctionTemplate> Shell::CreateNodeTemplates(
- 
- Local<ObjectTemplate> Shell::CreateGlobalTemplate(Isolate* isolate) {
-   Local<ObjectTemplate> global_template = ObjectTemplate::New(isolate);
-+  global_template->Set(
-+    String::NewFromUtf8(isolate, "loadjsc", NewStringType::kNormal)
-+        .ToLocalChecked(),
-+    FunctionTemplate::New(isolate, LoadJSC));
-   global_template->Set(Symbol::GetToStringTag(isolate),
-                        String::NewFromUtf8Literal(isolate, "global"));
-   global_template->Set(isolate, "version",
-@@ -3627,6 +3631,42 @@ Local<ObjectTemplate> Shell::CreateGlobalTemplate(Isolate* isolate) {
- 
-   return global_template;
+@@ -3575,8 +3575,49 @@ Local<FunctionTemplate> Shell::CreateNodeTemplates(
+   return div_element;
  }
+ 
 +static void Disassemble(v8::internal::BytecodeArray* bytecode) {
 +  internal::OFStream os(stdout);
 +  bytecode->Disassemble(os);
@@ -53,7 +42,13 @@ index 6101c651a0a..e62ff8bede3 100644
 +    Disassemble(fun->bytecode_array());
 +  }
 +}
- 
- Local<ObjectTemplate> Shell::CreateOSTemplate(Isolate* isolate) {
-   Local<ObjectTemplate> os_template = ObjectTemplate::New(isolate);
-
++
+ Local<ObjectTemplate> Shell::CreateGlobalTemplate(Isolate* isolate) {
+   Local<ObjectTemplate> global_template = ObjectTemplate::New(isolate);
++  global_template->Set(
++    String::NewFromUtf8(isolate, "loadjsc", NewStringType::kNormal)
++        .ToLocalChecked(),
++    FunctionTemplate::New(isolate, LoadJSC));
+   global_template->Set(Symbol::GetToStringTag(isolate),
+                        String::NewFromUtf8Literal(isolate, "global"));
+   global_template->Set(isolate, "version",
