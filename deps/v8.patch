@@ -10,10 +10,6 @@ index 0f4bea1f0ae..cffc32f0b52 100644
 -      SanityCheckWithoutSource(expected_ro_snapshot_checksum);
 -  if (result != SerializedCodeSanityCheckResult::kSuccess) return result;
 -  return SanityCheckJustSource(expected_source_hash);
-+  // SerializedCodeSanityCheckResult result =
-+  //     SanityCheckWithoutSource(expected_ro_snapshot_checksum);
-+  // if (result != SerializedCodeSanityCheckResult::kSuccess) return result;
-+  // return SanityCheckJustSource(expected_source_hash);
 +  return SerializedCodeSanityCheckResult::kSuccess;
  }
  
@@ -23,9 +19,5 @@ index 0f4bea1f0ae..cffc32f0b52 100644
 -  if (source_hash != expected_source_hash) {
 -    return SerializedCodeSanityCheckResult::kSourceMismatch;
 -  }
-+  // uint32_t source_hash = GetHeaderValue(kSourceHashOffset);
-+  // if (source_hash != expected_source_hash) {
-+  //   return SerializedCodeSanityCheckResult::kSourceMismatch;
-+  // }
    return SerializedCodeSanityCheckResult::kSuccess;
  }
