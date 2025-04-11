@@ -21,7 +21,7 @@ test -n "$branch"
   set -x
   gclient sync --no-history --reset -r "$branch"
   ls
-  cp d8cc.patch v8
+  cp v8.patch v8
   cd v8
- # git apply d8cc.patch
+  git apply v8.patch
 )
