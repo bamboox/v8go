@@ -4,5 +4,5 @@ package include
 
 import (
 	_ "github.com/ferdinandvhagen/v8go/deps/include/cppgc"
-	_ "github.com/ferdinandvhagen/v8go/deps/include/libplatform"
+  _ "github.com/ferdinandvhagen/v8go/deps/include/libplatform"
 )
