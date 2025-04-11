@@ -138,8 +138,9 @@ jobs:
       - name: Create PR
         uses: peter-evans/create-pull-request@v7
         env:
-          GITHUB_TOKEN: ${{ secrets.PAT_TOKEN }}
+          token: ${{ secrets.PAT_TOKEN }}
         with:
+          token: ${{ secrets.PAT_TOKEN }}
           commit-message: "Upgrade V8 binaries for ${{ needs.upgrade.outputs.v8_version }} version"
           branch: "v8_${{ needs.upgrade.outputs.v8_version }}_upgrade"
           delete-branch: true
