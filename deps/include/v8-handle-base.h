@@ -90,7 +90,7 @@ class IndirectHandleBase {
   internal::Address* location_ = nullptr;
 };
 
-#ifdef V8_ENABLE_DIRECT_HANDLE
+#ifdef V8_ENABLE_DIRECT_LOCAL
 
 /**
  * A base class for abstract handles containing direct pointers.
@@ -130,7 +130,7 @@ class DirectHandleBase {
   internal::Address ptr_ = internal::ValueHelper::kEmpty;
 };
 
-#endif  // V8_ENABLE_DIRECT_HANDLE
+#endif  // V8_ENABLE_DIRECT_LOCAL
 
 }  // namespace v8::api_internal
 

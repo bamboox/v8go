@@ -50,9 +50,7 @@ class V8_EXPORT EmbedderRootsHandler {
    * The concrete implementations must be thread-safe.
    */
   V8_DEPRECATED("Use TracedReferenceHandling::kDroppable instead.")
-  virtual bool IsRoot(const v8::TracedReference<v8::Value>& handle) {
-    return true;
-  }
+  virtual bool IsRoot(const v8::TracedReference<v8::Value>& handle) = 0;
 
   /**
    * Used in combination with |IsRoot|. Called by V8 when an
