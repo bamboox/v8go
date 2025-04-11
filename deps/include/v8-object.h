@@ -690,40 +690,31 @@ class V8_EXPORT Object : public Value {
   int GetIdentityHash();
 
   /**
-   * Clone this object with a fast but shallow copy. Values will point to the
-   * same values as the original object.
-   *
-   * Prefer using version with Isolate parameter.
+   * Clone this object with a fast but shallow copy.  Values will point
+   * to the same values as the original object.
    */
-  Local<Object> Clone(v8::Isolate* isolate);
+  // TODO(dcarney): take an isolate and optionally bail out?
   Local<Object> Clone();
 
   /**
    * Returns the context in which the object was created.
-   *
    * Prefer using version with Isolate parameter.
    */
   MaybeLocal<Context> GetCreationContext(v8::Isolate* isolate);
-  V8_DEPRECATE_SOON("Use the version with the isolate argument.")
   MaybeLocal<Context> GetCreationContext();
 
   /**
    * Shortcut for GetCreationContext(...).ToLocalChecked().
-   *
    * Prefer using version with Isolate parameter.
    **/
   Local<Context> GetCreationContextChecked(v8::Isolate* isolate);
-  V8_DEPRECATE_SOON("Use the version with the isolate argument.")
   Local<Context> GetCreationContextChecked();
 
   /** Same as above, but works for Persistents */
   V8_INLINE static MaybeLocal<Context> GetCreationContext(
-      v8::Isolate* isolate, const PersistentBase<Object>& object) {
-    return object.template value<Object>()->GetCreationContext(isolate);
+      const PersistentBase<Object>& object) {
+    return object.template value<Object>()->GetCreationContext();
   }
-  V8_DEPRECATE_SOON("Use the version with the isolate argument.")
-  V8_INLINE static MaybeLocal<Context> GetCreationContext(
-      const PersistentBase<Object>& object);
 
   /**
    * Gets the context in which the object was created (see GetCreationContext())
