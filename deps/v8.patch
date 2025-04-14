@@ -1,5 +1,34 @@
 diff --git a/src/snapshot/code-serializer.cc b/src/snapshot/code-serializer.cc
 index 0f4bea1f0ae..8d895e06422 100644
+--- a/src/codegen/compiler.cc
++++ b/src/codegen/compiler.cc
+@@ -3699,6 +3699,26 @@ MaybeHandle<SharedFunctionInfo> GetSharedFunctionInfoForScriptImpl(
+     maybe_script = lookup_result.script();
+     maybe_result = lookup_result.toplevel_sfi();
+     is_compiled_scope = lookup_result.is_compiled_scope();
++    // 伪造缓存命中的结果
++    if (lookup_result.script().is_null() && cached_data != nullptr) {
++      // ================================================================
++      // [关键修改] 同时伪造 Script 和 SharedFunctionInfo
++      // ================================================================
++      // 1. 创建一个空的 Script 对象
++      Handle<Script> script = isolate->factory()->NewScript(isolate->factory()->empty_string());
++      script->set_compilation_type(Script::COMPILATION_TYPE_HOST);
++      script->set_context_data(isolate->native_context()->debug_context_id());
++      // 2. 创建伪造的 SharedFunctionInfo 并关联到 Script
++      Handle<SharedFunctionInfo> sfi =
++          isolate->factory()->NewSharedFunctionInfoForBuiltin(
++              isolate->factory()->empty_string(), Builtin::kIllegal);
++      sfi->set_script(*script);
++      // 3. 更新 maybe_script 和 maybe_result
++      maybe_script = script;
++      maybe_result = sfi;
++      // 4. 将伪造的 Script 和 SFI 加入编译缓存
++      compilation_cache->PutScript(source, language_mode, sfi);
++    }
+     if (!maybe_result.is_null()) {
+       compile_timer.set_hit_isolate_cache();
+     } else if (can_consume_code_cache) {
 --- a/src/snapshot/code-serializer.cc
 +++ b/src/snapshot/code-serializer.cc
 @@ -700,18 +700,11 @@ SerializedCodeData::SerializedCodeData(const std::vector<uint8_t>* payload,
