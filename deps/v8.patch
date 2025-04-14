@@ -1,37 +1,50 @@
-diff --git a/src/snapshot/code-serializer.cc b/src/snapshot/code-serializer.cc
-index 0f4bea1f0ae..8d895e06422 100644
+diff --git a/src/codegen/compiler.cc b/src/codegen/compiler.cc
+index 0a95368d3b9..30bff2c1086 100644
 --- a/src/codegen/compiler.cc
 +++ b/src/codegen/compiler.cc
-@@ -3699,6 +3699,26 @@ MaybeHandle<SharedFunctionInfo> GetSharedFunctionInfoForScriptImpl(
-     maybe_script = lookup_result.script();
-     maybe_result = lookup_result.toplevel_sfi();
-     is_compiled_scope = lookup_result.is_compiled_scope();
-+    // 伪造缓存命中的结果
-+    if (lookup_result.script().is_null() && cached_data != nullptr) {
-+      // ================================================================
-+      // [关键修改] 同时伪造 Script 和 SharedFunctionInfo
-+      // ================================================================
-+      // 1. 创建一个空的 Script 对象
-+      Handle<Script> script = isolate->factory()->NewScript(isolate->factory()->empty_string());
-+      script->set_compilation_type(Script::COMPILATION_TYPE_HOST);
-+      script->set_context_data(isolate->native_context()->debug_context_id());
-+      // 2. 创建伪造的 SharedFunctionInfo 并关联到 Script
-+      Handle<SharedFunctionInfo> sfi =
-+          isolate->factory()->NewSharedFunctionInfoForBuiltin(
-+              isolate->factory()->empty_string(), Builtin::kIllegal);
-+      sfi->set_script(*script);
-+      // 3. 更新 maybe_script 和 maybe_result
-+      maybe_script = script;
-+      maybe_result = sfi;
-+      // 4. 将伪造的 Script 和 SFI 加入编译缓存
-+      compilation_cache->PutScript(source, language_mode, sfi);
-+    }
-     if (!maybe_result.is_null()) {
-       compile_timer.set_hit_isolate_cache();
-     } else if (can_consume_code_cache) {
+@@ -3651,7 +3651,10 @@ MaybeHandle<SharedFunctionInfo> GetSharedFunctionInfoForScriptImpl(
+     ScriptCompiler::CompilationDetails* compilation_details) {
+   ScriptCompileTimerScope compile_timer(isolate, no_cache_reason,
+                                         compilation_details);
+-
++  if (compile_options & ScriptCompiler::kConsumeCodeCache) {
++    // 创建空字符串作为替代
++    source = isolate->factory()->empty_string();
++  }
+   if (compile_options & ScriptCompiler::kConsumeCodeCache) {
+     // Have to have exactly one of cached_data or deserialize_task.
+     DCHECK(cached_data || deserialize_task);
+diff --git a/src/snapshot/code-serializer.cc b/src/snapshot/code-serializer.cc
+index 0f4bea1f0ae..8bdd9fe807a 100644
 --- a/src/snapshot/code-serializer.cc
 +++ b/src/snapshot/code-serializer.cc
-@@ -700,18 +700,11 @@ SerializedCodeData::SerializedCodeData(const std::vector<uint8_t>* payload,
+@@ -454,13 +454,15 @@ MaybeHandle<SharedFunctionInfo> CodeSerializer::Deserialize(
+     timer.Start();
+   }
+ 
++
+   HandleScope scope(isolate);
+ 
+   SerializedCodeSanityCheckResult sanity_check_result =
+       SerializedCodeSanityCheckResult::kSuccess;
+   const SerializedCodeData scd = SerializedCodeData::FromCachedData(
+       isolate, cached_data,
+-      SerializedCodeData::SourceHash(source, script_details.origin_options),
++      //SerializedCodeData::SourceHash(source, script_details.origin_options),
++      ScriptData::CachedData::SourceHash::Empty(),
+       &sanity_check_result);
+   if (sanity_check_result != SerializedCodeSanityCheckResult::kSuccess) {
+     if (v8_flags.profile_deserialization) {
+@@ -493,6 +495,10 @@ MaybeHandle<SharedFunctionInfo> CodeSerializer::Deserialize(
+     merge.SetUpOnMainThread(isolate, cached_script);
+     CHECK(merge.HasPendingBackgroundWork());
+     Handle<Script> new_script = handle(Cast<Script>(result->script()), isolate);
++      // 如果源码为空，跳过源码关联操作
++      new_script->set_source(*isolate->factory()->empty_string());
+     merge.BeginMergeInBackground(isolate->AsLocalIsolate(), new_script);
+     CHECK(merge.HasPendingForegroundWork());
+     result = merge.CompleteMergeInForeground(isolate, new_script);
+@@ -700,18 +706,11 @@ SerializedCodeData::SerializedCodeData(const std::vector<uint8_t>* payload,
  SerializedCodeSanityCheckResult SerializedCodeData::SanityCheck(
      uint32_t expected_ro_snapshot_checksum,
      uint32_t expected_source_hash) const {
@@ -51,4 +64,19 @@ index 0f4bea1f0ae..8d895e06422 100644
    return SerializedCodeSanityCheckResult::kSuccess;
  }
  
+diff --git a/src/snapshot/object-deserializer.cc b/src/snapshot/object-deserializer.cc
+index 77ccb1cd8b8..b45af784e6a 100644
+--- a/src/snapshot/object-deserializer.cc
++++ b/src/snapshot/object-deserializer.cc
+@@ -24,7 +24,9 @@ ObjectDeserializer::DeserializeSharedFunctionInfo(
+     Isolate* isolate, const SerializedCodeData* data, Handle<String> source) {
+   ObjectDeserializer d(isolate, data);
+ 
+-  d.AddAttachedObject(source);
++  //d.AddAttachedObject(source);
++  d.AddAttachedObject(isolate->factory()->empty_string());
++
+ 
+   Handle<HeapObject> result;
+   return d.Deserialize().ToHandle(&result) ? Cast<SharedFunctionInfo>(result)
 
