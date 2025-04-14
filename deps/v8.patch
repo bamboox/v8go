@@ -1,5 +1,5 @@
 diff --git a/src/codegen/compiler.cc b/src/codegen/compiler.cc
-index 0a95368d3b9..30bff2c1086 100644
+index 0a95368d3b9..c7e470591b4 100644
 --- a/src/codegen/compiler.cc
 +++ b/src/codegen/compiler.cc
 @@ -3651,7 +3651,10 @@ MaybeHandle<SharedFunctionInfo> GetSharedFunctionInfoForScriptImpl(
@@ -15,7 +15,7 @@ index 0a95368d3b9..30bff2c1086 100644
      // Have to have exactly one of cached_data or deserialize_task.
      DCHECK(cached_data || deserialize_task);
 diff --git a/src/snapshot/code-serializer.cc b/src/snapshot/code-serializer.cc
-index 0f4bea1f0ae..8bdd9fe807a 100644
+index 0f4bea1f0ae..e008dd4c399 100644
 --- a/src/snapshot/code-serializer.cc
 +++ b/src/snapshot/code-serializer.cc
 @@ -454,13 +454,15 @@ MaybeHandle<SharedFunctionInfo> CodeSerializer::Deserialize(
@@ -35,16 +35,16 @@ index 0f4bea1f0ae..8bdd9fe807a 100644
        &sanity_check_result);
    if (sanity_check_result != SerializedCodeSanityCheckResult::kSuccess) {
      if (v8_flags.profile_deserialization) {
-@@ -493,6 +495,10 @@ MaybeHandle<SharedFunctionInfo> CodeSerializer::Deserialize(
+@@ -493,6 +495,8 @@ MaybeHandle<SharedFunctionInfo> CodeSerializer::Deserialize(
      merge.SetUpOnMainThread(isolate, cached_script);
      CHECK(merge.HasPendingBackgroundWork());
      Handle<Script> new_script = handle(Cast<Script>(result->script()), isolate);
-+      // 如果源码为空，跳过源码关联操作
-+      new_script->set_source(*isolate->factory()->empty_string());
++    // 如果源码为空，跳过源码关联操作
++    new_script->set_source(*isolate->factory()->empty_string());
      merge.BeginMergeInBackground(isolate->AsLocalIsolate(), new_script);
      CHECK(merge.HasPendingForegroundWork());
      result = merge.CompleteMergeInForeground(isolate, new_script);
-@@ -700,18 +706,11 @@ SerializedCodeData::SerializedCodeData(const std::vector<uint8_t>* payload,
+@@ -700,18 +704,11 @@ SerializedCodeData::SerializedCodeData(const std::vector<uint8_t>* payload,
  SerializedCodeSanityCheckResult SerializedCodeData::SanityCheck(
      uint32_t expected_ro_snapshot_checksum,
      uint32_t expected_source_hash) const {
